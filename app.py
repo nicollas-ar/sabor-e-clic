@@ -2,7 +2,6 @@ import os, json
 from datetime import datetime
 from decimal import Decimal
 from functools import wraps
-import re
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
@@ -77,7 +76,7 @@ def page(body,**data):
     html = render_template_string(BASE,body=inner)
     token = generate_csrf()
     # Acrescenta o token a todos os formulários POST, inclusive logout.
-    return re.sub(r'<form\\b[^>]*>', lambda m: m.group(0) + ('<input type="hidden" name="csrf_token" value="' + token + '">' if re.search(r'\\bmethod\\s*=\\s*["\\\']?post\\b', m.group(0), re.I) else ''), html, flags=re.I)
+    return html.replace('method="post">', 'method="post"><input type="hidden" name="csrf_token" value="' + token + '">')
 
 @app.get("/")
 def home():
