@@ -2,6 +2,10 @@ import os, json
 from datetime import datetime
 from decimal import Decimal
 from functools import wraps
+import re
+from flask_wtf.csrf import CSRFProtect, generate_csrf
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from flask import Flask, request, redirect, url_for, session, flash, abort, render_template_string
 import pymysql
 from pymysql.cursors import DictCursor
@@ -11,7 +15,17 @@ from dotenv import load_dotenv
 load_dotenv()
 app=Flask(__name__)
 app.secret_key=os.getenv("SECRET_KEY","development-only-change-this")
-app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax", SESSION_COOKIE_SECURE=os.getenv("COOKIE_SECURE")=="1")
+app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax", SESSION_COOKIE_SECURE=os.getenv("COOKIE_SECURE")=="1", MAX_CONTENT_LENGTH=1024*1024)
+csrf = CSRFProtect(app)
+limiter = Limiter(get_remote_address, app=app, default_limits=[], storage_uri="memory://")
+
+@app.after_request
+def security_headers(response):
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["Content-Security-Policy"] = "default-src 'self'; img-src 'self' https: data:; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
+    return response
 
 def conn():
     from urllib.parse import urlparse, unquote, parse_qs
@@ -60,13 +74,17 @@ BASE='''<!doctype html><html lang="pt-br"><head><meta charset="utf-8"><meta name
 def page(body,**data):
     from flask import render_template_string
     inner=render_template_string(body,**data)
-    return render_template_string(BASE,body=inner)
+    html = render_template_string(BASE,body=inner)
+    token = generate_csrf()
+    # Acrescenta o token a todos os formulários POST, inclusive logout.
+    return re.sub(r'<form\\b[^>]*>', lambda m: m.group(0) + ('<input type="hidden" name="csrf_token" value="' + token + '">' if re.search(r'\\bmethod\\s*=\\s*["\\\']?post\\b', m.group(0), re.I) else ''), html, flags=re.I)
 
 @app.get("/")
 def home():
     return page('''<section class="hero"><div><span class="eyebrow">SABOR & CLIC</span><h1>Sua cozinha.<br>Seu sabor.<br><em>Seu negócio.</em></h1><p>Peça seus pratos favoritos e reserve espaços gastronômicos em um só lugar.</p><a class="btn" href="/cardapio">VER CARDÁPIO</a> <a class="btn outline" href="/espacos">VER ESPAÇOS</a></div><div class="heroart"><img src="/static/prato.png" alt="Prato de macarrão Sabor & Clic" class="hero-image"></div></section>''')
 
 @app.route("/cadastro",methods=["GET","POST"])
+@limiter.limit("5 per hour", methods=["POST"])
 def register():
     if request.method=="POST":
         name=request.form.get("name","").strip()[:120]; email=request.form.get("email","").strip().lower()[:180]; password=request.form.get("password","")
@@ -78,6 +96,7 @@ def register():
     return page('''<div class="panel narrow"><h1>Criar conta</h1><form method="post"><label>Nome<input name="name" required maxlength="120"></label><label>E-mail<input name="email" type="email" required></label><label>Senha<input name="password" type="password" minlength="8" required></label><button class="btn">Cadastrar</button></form></div>''')
 
 @app.route("/entrar",methods=["GET","POST"])
+@limiter.limit("10 per minute", methods=["POST"])
 def login():
     if request.method=="POST":
         u=query("SELECT * FROM users WHERE email=%s AND active=1",(request.form.get("email","").lower().strip(),),True)
