@@ -278,7 +278,21 @@ def init_db():
                 for name in ("Bancada 01","Bancada 02","Bancada Premium"):cur.execute("INSERT INTO spaces(name) VALUES(%s)",(name,))
             email=os.getenv("ADMIN_EMAIL","").strip().lower();password=os.getenv("ADMIN_PASSWORD","")
             if email and len(password)>=12:
-                cur.execute("INSERT IGNORE INTO users(name,email,password_hash,role) VALUES('Administrador',%s,%s,'admin')",(email,generate_password_hash(password)))
+                # A conta administrativa é gerenciada pelas variáveis do Render.
+                # Se já existir, sincroniza senha, permissão e status no deploy.
+                cur.execute("SELECT id FROM users WHERE email=%s",(email,))
+                existing_admin = cur.fetchone()
+                password_hash = generate_password_hash(password)
+                if existing_admin:
+                    cur.execute(
+                        "UPDATE users SET password_hash=%s, role='admin', active=1 WHERE id=%s",
+                        (password_hash, existing_admin["id"])
+                    )
+                else:
+                    cur.execute(
+                        "INSERT INTO users(name,email,password_hash,role,active) VALUES('Administrador',%s,%s,'admin',1)",
+                        (email, password_hash)
+                    )
         db.commit()
     print("Banco inicializado.")
 
