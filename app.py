@@ -64,7 +64,7 @@ def page(body,**data):
 
 @app.get("/")
 def home():
-    return page('''<section class="hero"><div><span class="eyebrow">SABOR & CLIC</span><h1>Sua cozinha.<br>Seu sabor.<br><em>Seu negócio.</em></h1><p>Peça seus pratos favoritos e reserve espaços gastronômicos em um só lugar.</p><a class="btn" href="/cardapio">VER CARDÁPIO</a> <a class="btn outline" href="/espacos">VER ESPAÇOS</a></div><div class="heroart">🍲</div></section>''')
+    return page('''<section class="hero"><div><span class="eyebrow">SABOR & CLIC</span><h1>Sua cozinha.<br>Seu sabor.<br><em>Seu negócio.</em></h1><p>Peça seus pratos favoritos e reserve espaços gastronômicos em um só lugar.</p><a class="btn" href="/cardapio">VER CARDÁPIO</a> <a class="btn outline" href="/espacos">VER ESPAÇOS</a></div><div class="heroart"><img src="/static/prato.png" alt="Prato de macarrão Sabor & Clic" class="hero-image"></div></section>''')
 
 @app.route("/cadastro",methods=["GET","POST"])
 def register():
