@@ -1,20 +1,21 @@
-# Sabor & Clic — Flask + SQL puro (MySQL)
+# Sabor & Clic
 
-Sistema integrado de cardápio, carrinho, pedidos, bancadas, cozinha, entregas e permissões.
+Projeto de um sistema de pedidos e reservas de espaços gastronômicos. Possui cardápio, carrinho, painel administrativo e áreas para cozinha e entregas.
 
 ## Tecnologias
-Flask, PyMySQL, SQL explícito com parâmetros %s, HTML/CSS/JS. **Não utiliza SQLAlchemy**.
 
-## Rodar localmente
-1. Crie um banco MySQL 8 na nuvem.
-2. Copie .env.example para .env, preencha DATABASE_URL, SECRET_KEY, ADMIN_EMAIL e ADMIN_PASSWORD.
-3. Instale: `pip install -r requirements.txt`
-4. Inicialize tabelas e dados: `flask --app app init-db`
-5. Execute: `flask --app app run --debug`
-6. Entre usando o e-mail e a senha do administrador definidos no .env.
+Python, Flask, PostgreSQL (Neon), HTML, CSS e JavaScript. O acesso ao banco é feito com SQL e Psycopg.
 
-## Vercel
-Importe o repositório na Vercel e configure as mesmas variáveis de ambiente (COOKIE_SECURE=1). Rode o init-db localmente, apontando para o banco remoto, antes da publicação.
+## Como executar
 
-## Observações
-MVP para testes: ainda não inclui cobrança, antifraude, proteção CSRF e demais controles necessários para operação comercial. Não compartilhe credenciais. O checkout registra pedidos sem processar pagamento. Evite usar em produção antes de auditoria de segurança.
+Configure as variáveis de ambiente conforme o arquivo `.env.example`.
+
+```sh
+pip install -r requirements.txt
+flask --app app init-db
+flask --app app run
+```
+
+O sistema cria as tabelas e os dados iniciais com o comando `init-db`. Os pedidos não possuem pagamento integrado.
+
+Para publicar no Render, consulte [RENDER.md](RENDER.md).

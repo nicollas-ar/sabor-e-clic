@@ -1,18 +1,11 @@
-# Publicação no Render
+# Neon e Render
 
-Este projeto usa **SQL puro com PyMySQL**. O banco MySQL fica em um provedor externo.
+1. Crie um projeto PostgreSQL no Neon e copie a URL de conexão direta (sem pooler), com SSL.
+2. No Render, crie um Blueprint usando este repositório e a branch `main`.
+3. Preencha `DATABASE_URL` com a URL do Neon, `ADMIN_EMAIL` com seu e-mail e `ADMIN_PASSWORD` com uma senha de pelo menos 12 caracteres. O Blueprint gera `SECRET_KEY` e configura `COOKIE_SECURE=1`.
+4. Acompanhe os logs do deploy. O comando de inicialização cria as tabelas, os dados iniciais e a conta administrativa antes de iniciar o Gunicorn.
+5. Teste `/saude`, `/cardapio`, `/espacos` e `/entrar`.
 
-## Publicação
-1. No Render, escolha **New > Blueprint** e conecte o GitHub `nicollas-ar/sabor-e-clic` na branch `main`.
-2. O arquivo `render.yaml` define o serviço web, o Gunicorn e a rota de saúde `/saude`.
-3. Configure as variáveis solicitadas: `DATABASE_URL` (URL MySQL), `ADMIN_EMAIL`, `ADMIN_PASSWORD` (12+ caracteres). A chave `SECRET_KEY` é gerada pelo Render.
-4. Confirme a criação do serviço e acompanhe **Logs**.
-5. Na inicialização, o comando `flask --app app init-db` cria as tabelas caso não existam e insere dados de demonstração. Em seguida, o Gunicorn inicia o site.
-6. Abra `/saude`, `/cardapio` e `/espacos` para testar.
+Se já existir um serviço Web no Render, altere as variáveis em Environment e use os comandos definidos em `render.yaml`.
 
-## Observações
-- Não inclua senhas no GitHub ou em capturas de tela.
-- A URL deve começar com `mysql://` ou `mysql+pymysql://`. Para provedores que exigem TLS, use `?ssl=true` na URL.
-- Se o MySQL gratuito dormir ou bloquear conexões externas, o site poderá falhar nas páginas que consultam o banco.
-- Não é necessário executar `init-db` no Shell do Render, pois ele faz parte do comando de inicialização.
-- A aplicação é um MVP e ainda precisa de proteção CSRF, limites de requisições, recuperação de senha e revisão de segurança antes de uso comercial.
+O banco é inicializado do zero se estiver vazio. Dados de um MySQL anterior não são importados automaticamente. Não publique credenciais no GitHub.

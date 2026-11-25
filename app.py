@@ -1,19 +1,20 @@
 import os, json
 from datetime import datetime
+from zoneinfo import ZoneInfo
 from decimal import Decimal
 from functools import wraps
 from flask_wtf.csrf import CSRFProtect, generate_csrf
 from flask_limiter import Limiter
 from flask_limiter.util import get_remote_address
 from flask import Flask, request, redirect, url_for, session, flash, abort, render_template_string
-import pymysql
-from pymysql.cursors import DictCursor
+import psycopg
+from psycopg.rows import dict_row
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 
 load_dotenv()
 app=Flask(__name__)
-app.secret_key=os.getenv("SECRET_KEY","development-only-change-this")
+app.secret_key=os.environ["SECRET_KEY"]
 app.config.update(SESSION_COOKIE_HTTPONLY=True, SESSION_COOKIE_SAMESITE="Lax", SESSION_COOKIE_SECURE=os.getenv("COOKIE_SECURE")=="1", MAX_CONTENT_LENGTH=1024*1024)
 csrf = CSRFProtect(app)
 limiter = Limiter(get_remote_address, app=app, default_limits=[], storage_uri="memory://")
@@ -27,12 +28,8 @@ def security_headers(response):
     return response
 
 def conn():
-    from urllib.parse import urlparse, unquote, parse_qs
-    url=os.environ["DATABASE_URL"]
-    p=urlparse(url)
-    if p.scheme not in ("mysql","mysql+pymysql"): raise RuntimeError("DATABASE_URL precisa ser MySQL")
-    ssl={"ssl":{}} if parse_qs(p.query).get("ssl",[""])[0]=="true" else {}
-    return pymysql.connect(host=p.hostname,port=p.port or 3306,user=unquote(p.username or ""),password=unquote(p.password or ""),database=p.path.lstrip("/"),charset="utf8mb4",cursorclass=DictCursor,autocommit=False,connect_timeout=8,**ssl)
+    return psycopg.connect(os.environ["DATABASE_URL"], row_factory=dict_row, connect_timeout=10, options="-c timezone=America/Sao_Paulo")
+
 
 def query(sql, params=(), one=False):
     with conn() as db:
@@ -44,9 +41,9 @@ def execute(sql,params=()):
     with conn() as db:
         try:
             with db.cursor() as cur:
-                cur.execute(sql,params); ident=cur.lastrowid; changed=cur.rowcount
+                cur.execute(sql,params); changed=cur.rowcount
             db.commit()
-            return ident,changed
+            return None,changed
         except:
             db.rollback(); raise
 
@@ -75,7 +72,6 @@ def page(body,**data):
     inner=render_template_string(body,**data)
     html = render_template_string(BASE,body=inner)
     token = generate_csrf()
-    # Acrescenta o token a todos os formulários POST, inclusive logout.
     return html.replace('method="post">', 'method="post"><input type="hidden" name="csrf_token" value="' + token + '">')
 
 @app.get("/")
@@ -138,8 +134,8 @@ def checkout():
                 if len(dishes)!=len(quantities): abort(400)
                 total=sum((d["price"]*quantities[d["id"]] for d in dishes),Decimal("0"))
                 u=current_user()
-                cur.execute("INSERT INTO orders(customer_id,name,address,notes,total,status) VALUES(%s,%s,%s,%s,%s,'recebido')",(u["id"],u["name"],address,request.form.get("notes","")[:500],total))
-                oid=cur.lastrowid
+                cur.execute("INSERT INTO orders(customer_id,name,address,notes,total,status) VALUES(%s,%s,%s,%s,%s,'recebido') RETURNING id",(u["id"],u["name"],address,request.form.get("notes","")[:500],total))
+                oid=cur.fetchone()["id"]
                 for d in dishes: cur.execute("INSERT INTO order_items(order_id,dish_id,name,quantity,unit_price) VALUES(%s,%s,%s,%s,%s)",(oid,d["id"],d["name"],quantities[d["id"]],d["price"]))
             db.commit()
         except:
@@ -173,7 +169,7 @@ def spaces():
 def reserve():
     try: sid=int(request.form["space_id"]);start=datetime.fromisoformat(request.form["start_at"]);end=datetime.fromisoformat(request.form["end_at"])
     except (ValueError,KeyError): abort(400)
-    if start>=end or start<datetime.now() or (end-start).total_seconds()>86400: abort(400)
+    if start>=end or start<datetime.now(ZoneInfo('America/Sao_Paulo')).replace(tzinfo=None) or (end-start).total_seconds()>86400: abort(400)
     with conn() as db:
         try:
             with db.cursor() as cur:
@@ -249,7 +245,7 @@ def team():
 @restricted("admin","cozinha")
 def kitchen():
     orders=query("SELECT * FROM orders WHERE status IN ('recebido','preparo','pronto') ORDER BY id")
-    bookings=query("SELECT b.*,s.name AS space_name,u.name AS responsible FROM bookings b JOIN spaces s ON s.id=b.space_id JOIN users u ON u.id=b.user_id WHERE b.status='confirmada' AND b.end_at>=NOW() ORDER BY b.start_at LIMIT 40")
+    bookings=query("SELECT b.*,s.name AS space_name,u.name AS responsible FROM bookings b JOIN spaces s ON s.id=b.space_id JOIN users u ON u.id=b.user_id WHERE b.status='confirmada' AND b.end_at>=LOCALTIMESTAMP ORDER BY b.start_at LIMIT 40")
     return page('''<h1>Central da <em>cozinha</em></h1><div class="cards">{% for o in orders %}<div class="panel"><h2>Pedido #{{o.id}}</h2><p>{{o.status}} · {{o.name}}</p><form method="post" action="/cozinha/{{o.id}}/avancar"><button class="btn" {% if o.status=='pronto' %}disabled{% endif %}>{{'Iniciar preparo' if o.status=='recebido' else 'Marcar pronto' if o.status=='preparo' else 'Aguardando entregador'}}</button></form></div>{% else %}<p>Nenhum pedido pendente.</p>{% endfor %}</div><h2>Bancadas reservadas</h2><div class="cards">{% for b in bookings %}<div class="panel"><b>{{b.space_name}}</b><p>{{b.responsible}}</p><p>{{b.start_at}} — {{b.end_at}}</p></div>{% endfor %}</div>''',orders=orders,bookings=bookings)
 
 @app.post("/cozinha/<int:oid>/avancar")
@@ -296,8 +292,6 @@ def init_db():
                 for name in ("Bancada 01","Bancada 02","Bancada Premium"):cur.execute("INSERT INTO spaces(name) VALUES(%s)",(name,))
             email=os.getenv("ADMIN_EMAIL","").strip().lower();password=os.getenv("ADMIN_PASSWORD","")
             if email and len(password)>=12:
-                # A conta administrativa é gerenciada pelas variáveis do Render.
-                # Se já existir, sincroniza senha, permissão e status no deploy.
                 cur.execute("SELECT id FROM users WHERE email=%s",(email,))
                 existing_admin = cur.fetchone()
                 password_hash = generate_password_hash(password)
