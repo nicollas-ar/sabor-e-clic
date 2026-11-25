@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Espaços <em>gastronômicos</em></h1><div class="cards">{% for s in spaces %}<div class="panel"><h2>{{s.name}}</h2><p>{{s.description}}</p><form action="/espacos/reservar" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="space_id" value="{{s.id}}"><label>Início<input name="start_at" type="datetime-local" required></label><label>Fim<input name="end_at" type="datetime-local" required></label><button class="btn">Reservar</button></form></div>{% endfor %}</div>
+{% endblock %}

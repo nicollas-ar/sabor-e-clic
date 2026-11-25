@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel"><h1>Pedido #{{o.id}}</h1><p>Estado: <b>{{o.status}}</b></p><p>Entrega: {{o.address}}</p>{% for i in items %}<p>{{i.quantity}}x {{i.name}} — {{money(i.unit_price)}}</p>{% endfor %}<h2>Total {{money(o.total)}}</h2></div>
+{% endblock %}

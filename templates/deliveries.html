@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Área do <em>entregador</em></h1><div class="cards">{% for o in orders %}<div class="panel"><h2>Pedido #{{o.id}}</h2><p>{{o.address}}</p><p>{{money(o.total)}}</p>{% if o.status=='pronto' %}<form action="/entregas/{{o.id}}/aceitar" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn">Aceitar entrega</button></form>{% else %}<form action="/entregas/{{o.id}}/concluir" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button class="btn">Marcar entregue</button></form>{% endif %}</div>{% else %}<p>Sem entregas disponíveis.</p>{% endfor %}</div>
+{% endblock %}

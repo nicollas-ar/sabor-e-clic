@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Gerenciar bancadas</h1><div class="panel"><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Nome<input name="name" required></label><label>Descrição<input name="description"></label><button class="btn">Adicionar</button></form></div><div class="cards">{% for s in spaces %}<div class="panel"><h2>{{s.name}}</h2><p>{{s.description}} · {{'Disponível' if s.active else 'Inativa'}}</p><form method="post" action="/painel/espacos/{{s.id}}/alternar"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>Ativar / desativar</button></form></div>{% endfor %}</div>
+{% endblock %}

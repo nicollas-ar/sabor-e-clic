@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Seu <em>pedido</em></h1><div class="panel"><div id="cartItems"></div><h2>Total: <span id="cartTotal">R$ 0,00</span></h2><form action="/pedido/novo" method="post" onsubmit="return prepareOrder(this)"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="items" id="itemsInput"><label>CEP<input id="cep" inputmode="numeric" maxlength="9" placeholder="00000-000"></label><button type="button" id="buscarCep">Buscar CEP</button><p id="cepStatus" role="status"></p><label>Endereço completo (inclua número e complemento)<input id="address" name="address" minlength="8" maxlength="350" required></label><script src="/static/cep.js" defer></script><label>Observações<textarea name="notes"></textarea></label><button class="btn">Confirmar pedido (sem pagamento)</button></form></div>
+{% endblock %}

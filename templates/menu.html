@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Nosso <em>cardápio</em></h1><div class="cards">{% for d in dishes %}<article class="panel dish"><div class="food">{% if d.image %}<img src="{{d.image}}" alt="{{d.name}}">{% else %}🍽️{% endif %}</div><small>{{d.category}}</small><h2>{{d.name}}</h2><p>{{d.description}}</p><strong>{{money(d.price)}}</strong><button class="btn" onclick='addDish({{d.id}},{{d.name|tojson}},{{d.price|float}})'>Adicionar</button></article>{% else %}<p>Cardápio em preparação.</p>{% endfor %}</div>
+{% endblock %}

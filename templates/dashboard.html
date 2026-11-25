@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Painel <em>administrativo</em></h1><div class="cards">{% for k,v in counts.items() %}<div class="panel"><h2>{{v}}</h2><p>{{k|capitalize}}</p></div>{% endfor %}</div><div class="links"><a class="btn" href="/painel/pratos">Gerenciar cardápio</a><a class="btn" href="/painel/espacos">Gerenciar espaços</a><a class="btn" href="/painel/equipe">Equipe</a><a class="btn" href="/pedidos">Pedidos</a><a class="btn" href="/minhas-reservas">Reservas</a></div>
+{% endblock %}

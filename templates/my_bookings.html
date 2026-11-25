@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Minhas reservas</h1><div class="cards">{% for b in bookings %}<div class="panel"><h2>{{b.space_name}}</h2><p>{{b.start_at}} até {{b.end_at}}</p><strong>{{b.status}}</strong></div>{% else %}<p>Sem reservas.</p>{% endfor %}</div>
+{% endblock %}

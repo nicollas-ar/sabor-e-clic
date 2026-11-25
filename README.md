@@ -19,3 +19,12 @@ flask --app app run
 O sistema cria as tabelas e os dados iniciais com o comando `init-db`. Os pedidos não possuem pagamento integrado.
 
 Para publicar no Render, consulte [RENDER.md](RENDER.md).
+
+## Organização MVC
+
+- `models/`: conexão, consultas SQL e inicialização do banco.
+- `controllers/`: rotas e regras divididas por funcionalidade.
+- `templates/`: páginas HTML com Jinja.
+- `static/`: CSS e JavaScript, incluindo a consulta ViaCEP no carrinho.
+
+A consulta de CEP é opcional; o endereço pode ser digitado manualmente.

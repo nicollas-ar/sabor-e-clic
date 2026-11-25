@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="panel narrow"><h1>Entrar</h1><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>E-mail<input name="email" type="email" required></label><label>Senha<input name="password" type="password" required></label><button class="btn">Entrar</button></form><p>Não tem conta? <a href="/cadastro">Cadastre-se</a></p></div>
+{% endblock %}

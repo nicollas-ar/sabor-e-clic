@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Equipe e permissões</h1><div class="panel"><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>E-mail de usuário cadastrado<input name="email" type="email" required></label><label>Perfil<select name="role"><option>cliente</option><option>cozinha</option><option>entregador</option></select></label><button class="btn">Atualizar perfil</button></form></div><div class="panel">{% for u in users %}<p>{{u.name}} · {{u.email}} · <b>{{u.role}}</b></p>{% endfor %}</div>
+{% endblock %}

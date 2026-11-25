@@ -1,0 +1,4 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Gerenciar cardápio</h1><div class="panel"><form method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><label>Nome<input name="name" required></label><label>Descrição<input name="description"></label><label>Categoria<select name="category"><option>Pratos</option><option>Combos</option><option>Bebidas</option></select></label><label>Preço<input type="number" name="price" min="0.01" step="0.01" required></label><label>Imagem HTTPS<input name="image"></label><button class="btn">Novo prato</button></form></div><div class="cards">{% for d in dishes %}<div class="panel"><h2>{{d.name}}</h2><p>{{money(d.price)}} · {{'Ativo' if d.active else 'Inativo'}}</p><form action="/painel/pratos/{{d.id}}/alternar" method="post"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><button>Ativar / desativar</button></form></div>{% endfor %}</div>
+{% endblock %}
